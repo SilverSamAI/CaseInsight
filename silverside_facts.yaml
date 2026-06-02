@@ -1,0 +1,193 @@
+# =============================================================================
+# silverside_facts.yaml
+# SINGLE SOURCE OF TRUTH for every claim, client, metric, and proof point that
+# may appear in outbound copy. Every fact carries a `usage` flag.
+#
+# RULE: No agent may place any claim in outbound copy unless it appears here
+# with usage: approved_for_outbound. Anything else is "needs_verification" and
+# is excluded from copy until a human promotes it.
+#
+# Sources: silverside.ai (homepage, project pages), Ad Age (2026-04-21),
+# LBBOnline / Roastbrief (UK launch 2026-04-22), Adweek / Inc / Marketing Brew
+# (Svedka Super Bowl Feb 2026), TechCrunch (2026-02-08), HumanX partner page.
+# Last verified: 2026-06-02
+# =============================================================================
+
+company:
+  legal_name: "Silverside AI, LLC"
+  display_name: "Silverside"
+  parent: "Pereira O'Dell"
+  founded: 2024
+  hq_addresses:
+    sf: "1265 Battery Street, 4th Floor, San Francisco, CA 94111"
+    ny: "490 Broadway, 5th Floor, New York, NY 10012"
+  offices: ["San Francisco", "New York", "London"]
+  network_claim:
+    text: "Backed by a global network of 30+ offices and 6,000 creatives, technologists, brand strategists, and entrepreneurs."
+    usage: approved_for_outbound
+  positioning_line:
+    text: "An AI innovation lab helping the world's best brands revolutionize their marketing ecosystem."
+    usage: approved_for_outbound
+
+founders_and_leaders:
+  # Use for research context and LinkedIn personalization, NOT as quotes in cold copy.
+  - name: "Rob Wrubel"
+    role: "Co-founder & Managing Partner"
+  - name: "PJ Pereira"
+    role: "Founder & Creative Chairman (Emmy winner)"
+  - name: "Johnny Rohrbach"
+    role: "Founder, Head of Global Partnerships & Operations"
+  - name: "Andrew O'Dell"
+    role: "Co-founder"
+  - name: "Daniel Lipman"
+    role: "Managing Director, UK"
+
+# -----------------------------------------------------------------------------
+# CLIENTS — only names confirmed in public sources. The `outbound_use` flag
+# controls whether the name may appear in cold email copy.
+# -----------------------------------------------------------------------------
+clients:
+  - name: "Coca-Cola"
+    outbound_use: approved
+    note: "AI holiday 'The Holidays Are Coming' campaign; first AI roster. Strongest-performing holiday campaign in over a decade (per Coca-Cola / LBB)."
+  - name: "Svedka (Sazerac)"
+    outbound_use: approved
+    note: "First primarily AI-generated Super Bowl commercial, SB 2026. Fembot + Brobot."
+  - name: "Amazon"
+    outbound_use: approved
+    note: "Amazon Ads work; multi-division automation."
+  - name: "Panasonic"
+    outbound_use: approved
+    note: "Panasonic Alpha spot, launched multi-market."
+  - name: "Sephora (LVMH)"
+    outbound_use: approved
+  - name: "LVMH"
+    outbound_use: approved
+    note: "Multiple maisons. Use 'LVMH' or 'Sephora' rather than naming unconfirmed maisons."
+  - name: "Sam's Club"
+    outbound_use: approved
+  - name: "Williams Sonoma"
+    outbound_use: approved
+  - name: "BMW"
+    outbound_use: approved
+  - name: "Goodwill"
+    outbound_use: approved
+  - name: "Pacsun"
+    outbound_use: approved
+    note: "Brand brain built (per Ad Age)."
+  - name: "Marc Jacobs"
+    outbound_use: approved
+  - name: "Quay"
+    outbound_use: approved
+  - name: "CyberArk"
+    outbound_use: approved
+  - name: "SimpliSafe"
+    outbound_use: approved
+  - name: "Headline"
+    outbound_use: approved
+  # Named in transcripts/decks but NOT on public site — restrict to verbal/context use.
+  - name: "Google Fiber"
+    outbound_use: needs_verification
+    note: "Discussed on calls; not on public client wall. Do not name in cold copy until confirmed."
+  - name: "Hershey / Reese's"
+    outbound_use: needs_verification
+    note: "Discussed on calls; not on public client wall. Exclude from cold copy."
+  - name: "Fifth Third Bank / Zelle / One Pay"
+    outbound_use: needs_verification
+    note: "Referenced verbally for regulated-industry credibility. Do not name in cold copy."
+
+# -----------------------------------------------------------------------------
+# METRICS — the four public impact numbers from silverside.ai. Use carefully,
+# only when relevant, and never recombine into new fabricated stats.
+# -----------------------------------------------------------------------------
+metrics:
+  - id: cost_reduction
+    value: "68%"
+    label: "Cost Reduction"
+    usage: approved_for_outbound
+    guidance: "Frame as illustrative of AI-video impact, not a guarantee for the prospect."
+  - id: impressions
+    value: "7 billion"
+    label: "Impressions"
+    usage: approved_for_outbound
+  - id: time_reduction
+    value: "87.5%"
+    label: "Time Reduction"
+    usage: approved_for_outbound
+  - id: content_volume
+    value: "20x"
+    label: "Content Volume"
+    usage: approved_for_outbound
+  - id: svedka_sales_lift
+    value: "40%"
+    label: "Svedka sales lift"
+    usage: approved_for_outbound
+    guidance: "Tie to the Svedka Super Bowl campaign only. Per Sam's positioning doc."
+
+# -----------------------------------------------------------------------------
+# APPROVED PROOF POINTS — pre-written, copy-ready claim blocks. Agents must use
+# these verbatim or lightly trimmed; they may NOT author new factual claims.
+# -----------------------------------------------------------------------------
+proof_points:
+  - id: coke_holiday
+    text: "We helped build Coca-Cola's AI holiday campaign, which became the best-performing holiday ad in the brand's history."
+    usage: approved_for_outbound
+    best_for_personas: ["CMO", "VP Brand", "Chief Brand Officer", "VP Creative"]
+  - id: svedka_superbowl
+    text: "We created the first-ever AI Super Bowl commercial for Svedka, helping drive a 40% sales lift."
+    usage: approved_for_outbound
+    best_for_personas: ["CMO", "VP Marketing", "Chief Growth Officer", "VP Brand"]
+  - id: client_roster
+    text: "We also work with teams like Amazon, LVMH, Sam's Club, and more."
+    usage: approved_for_outbound
+    best_for_personas: ["all"]
+  - id: brand_brain
+    text: "We build 'brand brains' — living models trained on a brand's style guides, products, and creative, so teams can generate on-brand assets at scale instead of starting from scratch each campaign."
+    usage: approved_for_outbound
+    best_for_personas: ["Chief Digital Officer", "VP Content", "Head of Creative Operations", "Innovation Lead"]
+  - id: system_not_asset
+    text: "The unlock isn't one AI asset. It's the system behind it: workflows, brand guardrails, localization logic, approval paths, and templates that turn one idea into hundreds of usable assets across markets and channels."
+    usage: approved_for_outbound
+    best_for_personas: ["all"]
+
+# -----------------------------------------------------------------------------
+# OFFERINGS
+# -----------------------------------------------------------------------------
+offerings:
+  ai_video:
+    name: "AI Video"
+    one_liner: "Human-led, AI-powered production pipelines for campaign films, social video, brand spots, product storytelling, image-to-video, cutdowns, versioning, and localization."
+    proof_default: svedka_superbowl
+  ai_content_systems:
+    name: "AI Content Systems"
+    one_liner: "Custom 'brand brain' systems and sandboxed workflows that scale creative operations across campaigns, channels, markets, and product lines."
+    proof_default: brand_brain
+  strategic_consulting:
+    name: "Strategic Consulting"
+    one_liner: "Innovation sprints, AI readiness assessment, production pilots, governance, and adoption planning to move teams from scattered experimentation to a structured operating model."
+    proof_default: system_not_asset
+
+# -----------------------------------------------------------------------------
+# HARD POSITIONING GUARDRAILS — every copy/QA agent enforces these.
+# -----------------------------------------------------------------------------
+position_as:
+  - "AI-native creative innovation lab"
+  - "Strategic AI creative systems partner"
+  - "Human-led, AI-powered production and workflow partner"
+  - "Partner for building AI creative infrastructure"
+do_not_position_as:
+  - "A generic AI tool"
+  - "A cheap production vendor"
+  - "A simple AI video vendor"
+  - "A self-serve software product"
+  - "A replacement for creative teams"
+  - "A gimmicky AI shop"
+  - "A one-off asset generator"
+
+forbidden_in_copy:
+  - "Any client name with outbound_use != approved"
+  - "Any metric not listed under metrics with usage approved_for_outbound"
+  - "Any new performance number, award, or named result not in this file"
+  - "Any claim about the prospect's private budget, internal priorities, or named individuals' motivations"
+  - "Any 'I saw your LinkedIn post' unless the post URL is captured as a verified source"
+  - "Em dashes (Sam style rule)"
