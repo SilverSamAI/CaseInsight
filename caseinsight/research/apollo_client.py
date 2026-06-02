@@ -1,10 +1,17 @@
 from __future__ import annotations
 import time
 import requests
+from ..utils.retry import with_retry
 
 
 class ApolloAPIError(Exception):
-    pass
+    def __init__(self, message: str, status_code: int | None = None):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class ApolloRateLimitError(ApolloAPIError):
+    """Raised on 429 or 5xx responses — safe to retry."""
 
 
 class ApolloClient:
@@ -74,11 +81,13 @@ class ApolloClient:
     def search_contacts_by_email(self, email: str) -> dict:
         return self._post("/contacts/search", {"q_keywords": email, "page": 1, "per_page": 1})
 
+    @with_retry(retry_on=(ApolloRateLimitError, requests.ConnectionError, requests.Timeout))
     def _get(self, path: str, params: dict | None = None) -> dict:
         resp = self._session.get(f"{self.BASE}{path}", params=params)
         self._raise_for_status(resp)
         return resp.json()
 
+    @with_retry(retry_on=(ApolloRateLimitError, requests.ConnectionError, requests.Timeout))
     def _post(self, path: str, payload: dict) -> dict:
         resp = self._session.post(f"{self.BASE}{path}", json=payload)
         self._raise_for_status(resp)
@@ -86,5 +95,9 @@ class ApolloClient:
 
     @staticmethod
     def _raise_for_status(resp: requests.Response) -> None:
-        if not resp.ok:
-            raise ApolloAPIError(f"Apollo {resp.status_code}: {resp.text[:400]}")
+        if resp.ok:
+            return
+        msg = f"Apollo {resp.status_code}: {resp.text[:400]}"
+        if resp.status_code == 429 or resp.status_code >= 500:
+            raise ApolloRateLimitError(msg, status_code=resp.status_code)
+        raise ApolloAPIError(msg, status_code=resp.status_code)

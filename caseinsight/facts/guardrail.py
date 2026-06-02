@@ -69,8 +69,8 @@ def check_output_for_violations(text: str, facts: dict) -> list[str]:
 def check_for_unapproved_claims(text: str, facts: dict) -> list[str]:
     approved_values = {m["value"] for m in get_approved_metrics(facts)}
     suspicions = []
-    for match in re.finditer(r'\b(\d+(?:\.\d+)?[x%])\b', text):
-        num = match.group(1)
-        if not any(num in v for v in approved_values):
+    for match in re.finditer(r'(\d+(?:\.\d+)?\s?[x%])', text):
+        num = match.group(1).replace(" ", "")
+        if not any(num in v.replace(" ", "") for v in approved_values):
             suspicions.append(f"Unverified numeric claim: '{num}'")
     return suspicions

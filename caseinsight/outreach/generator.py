@@ -3,7 +3,6 @@ import json
 import re
 import time
 from typing import Callable
-import anthropic
 from ..models import Prospect, EmailDraft
 from ..config import AppConfig
 from .prompt_builder import build_system_prompt, build_user_prompt
@@ -16,6 +15,8 @@ def generate_email(
     config: AppConfig,
     context_notes: str = "",
 ) -> EmailDraft:
+    import anthropic
+
     client = anthropic.Anthropic(api_key=config.anthropic_api_key)
     system_prompt = build_system_prompt(facts)
     user_prompt = build_user_prompt(prospect, context_notes)

@@ -17,6 +17,7 @@ from .research.apollo_client import ApolloClient
 from .research.prospect import filter_prospects, search_prospects
 from .sequencing.apollo_sequences import enroll_batch
 from .crm.hubspot_sync import build_hubspot_client, sync_batch
+from .utils.state import ContactState
 
 app = typer.Typer(
     name="caseinsight",
@@ -43,6 +44,10 @@ def research(
     company: list[str] = typer.Option([], "--company", "-c", help="Target company name (repeatable)"),
     limit: int = typer.Option(25, "--limit", "-n", help="Max prospects to return"),
     require_email: bool = typer.Option(True, "--require-email/--no-require-email"),
+    skip_contacted: bool = typer.Option(
+        True, "--skip-contacted/--include-contacted",
+        help="Exclude prospects already recorded in the local contact state",
+    ),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Save to JSON file"),
 ) -> None:
     """Search and enrich prospects via Apollo."""
@@ -58,6 +63,13 @@ def research(
             limit=limit,
         )
     prospects = filter_prospects(prospects, require_email=require_email)
+    if skip_contacted:
+        state = ContactState()
+        before = len(prospects)
+        prospects = [p for p in prospects if not state.seen(p.email)]
+        skipped = before - len(prospects)
+        if skipped:
+            console.print(f"[dim]Skipped {skipped} already-contacted prospects[/dim]")
     console.print(f"Found [bold]{len(prospects)}[/bold] prospects")
 
     table = Table(title="Prospects")
@@ -153,6 +165,11 @@ def enroll(
     prospects = _load_prospects(input_file)
     results = enroll_batch(client, prospects, seq_id, acct_id, console)
     enrolled = sum(1 for v in results.values() if v)
+    state = ContactState()
+    for p in prospects:
+        if results.get(p.email or p.full_name):
+            state.mark(p.email, "enrolled")
+    state.save()
     console.print(f"\n[green]{enrolled}/{len(prospects)}[/green] prospects enrolled")
 
 
@@ -169,6 +186,11 @@ def sync(
     prospects = _load_prospects(input_file)
     results = sync_batch(hs, prospects, pipeline, console, with_deal=not no_deals)
     synced = sum(1 for r in results if r.hubspot_contact_id)
+    state = ContactState()
+    for r in results:
+        if r.hubspot_contact_id:
+            state.mark(r.prospect_email, "synced")
+    state.save()
     console.print(f"\n[green]{synced}/{len(prospects)}[/green] contacts synced to HubSpot")
     for err in [e for r in results for e in r.errors]:
         console.print(f"[red]{err}[/red]")
