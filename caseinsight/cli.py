@@ -11,13 +11,16 @@ from rich.table import Table
 
 from .config import load_config
 from .facts.loader import load_facts
+from .importer import load_file
+from .linter import lint_facts
 from .models import EmailDraft, Prospect
 from .outreach.generator import generate_batch
+from .personas import infer_persona
 from .research.apollo_client import ApolloClient
 from .research.prospect import filter_prospects, search_prospects
 from .sequencing.apollo_sequences import enroll_batch
 from .crm.hubspot_sync import build_hubspot_client, sync_batch
-from .utils.state import ContactState
+from .utils.state import ContactState, DEFAULT_STATE_PATH
 
 app = typer.Typer(
     name="caseinsight",
@@ -28,8 +31,7 @@ console = Console()
 
 
 def _load_prospects(path: Path) -> list[Prospect]:
-    data = json.loads(path.read_text())
-    return [Prospect.from_dict(p) for p in data]
+    return load_file(path)
 
 
 def _save(items: list, path: Path) -> None:
@@ -73,7 +75,7 @@ def research(
     console.print(f"Found [bold]{len(prospects)}[/bold] prospects")
 
     table = Table(title="Prospects")
-    for col in ["Name", "Title", "Company", "Email", "Industry"]:
+    for col in ["Name", "Title", "Company", "Email", "Industry", "Persona"]:
         table.add_column(col)
     for p in prospects:
         table.add_row(
@@ -82,6 +84,7 @@ def research(
             p.company or "",
             p.email or "[dim]none[/dim]",
             p.industry or "",
+            infer_persona(p.title),
         )
     console.print(table)
 
@@ -261,6 +264,100 @@ def run_all(
 
     console.rule("[bold]Done[/bold]")
     console.print(f"[green]Pipeline complete. {passed}/{len(drafts)} emails passed guardrail.[/green]")
+
+
+@app.command("import")
+def import_prospects(
+    input_file: Path = typer.Argument(..., help="CSV or JSON file of prospects"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o"),
+    skip_contacted: bool = typer.Option(True, "--skip-contacted/--include-contacted"),
+) -> None:
+    """Import prospects from a CSV or JSON file (normalises column names automatically)."""
+    prospects = _load_prospects(input_file)
+    if skip_contacted:
+        state = ContactState()
+        before = len(prospects)
+        prospects = [p for p in prospects if not state.seen(p.email)]
+        skipped = before - len(prospects)
+        if skipped:
+            console.print(f"[dim]Skipped {skipped} already-contacted prospects[/dim]")
+
+    table = Table(title=f"Imported from {input_file.name}")
+    for col in ["Name", "Title", "Company", "Email", "Persona"]:
+        table.add_column(col)
+    for p in prospects:
+        table.add_row(
+            p.full_name, p.title or "", p.company or "",
+            p.email or "[dim]none[/dim]", infer_persona(p.title),
+        )
+    console.print(table)
+    console.print(f"[bold]{len(prospects)}[/bold] prospects ready")
+
+    if output:
+        _save(prospects, output)
+    else:
+        console.print(json.dumps([asdict(p) for p in prospects], indent=2))
+
+
+@app.command("validate-facts")
+def validate_facts(
+    facts_path: Path = typer.Argument(
+        Path("silverside_facts.yaml"),
+        help="Path to silverside_facts.yaml",
+    ),
+) -> None:
+    """Lint silverside_facts.yaml for schema errors and missing usage flags."""
+    path = facts_path
+    facts = load_facts(str(path))
+    errors = lint_facts(facts)
+
+    if not errors:
+        console.print(f"[green]No issues found in {path}[/green]")
+        return
+
+    errs = [e for e in errors if e.level == "error"]
+    warns = [e for e in errors if e.level == "warning"]
+    for e in errs:
+        console.print(f"[red]{e}[/red]")
+    for w in warns:
+        console.print(f"[yellow]{w}[/yellow]")
+    console.print(f"\n{len(errs)} error(s), {len(warns)} warning(s)")
+    if errs:
+        raise typer.Exit(1)
+
+
+@app.command()
+def status() -> None:
+    """Show the local contact pipeline state (who has been drafted / enrolled / synced)."""
+    state_path = Path(DEFAULT_STATE_PATH)
+    if not state_path.exists():
+        console.print("[dim]No state file found. Run the pipeline first.[/dim]")
+        return
+
+    import json as _json
+    data: dict = _json.loads(state_path.read_text())
+    if not data:
+        console.print("[dim]State file is empty.[/dim]")
+        return
+
+    table = Table(title=f"Contact Pipeline State ({len(data)} contacts)")
+    table.add_column("Email")
+    table.add_column("Drafted")
+    table.add_column("Enrolled")
+    table.add_column("Synced")
+
+    for email, record in sorted(data.items()):
+        stages = record.get("stages", {})
+        def _ts(s: str) -> str:
+            ts = stages.get(s, "")
+            return f"[green]{ts[:10]}[/green]" if ts else "[dim]no[/dim]"
+        table.add_row(email, _ts("drafted"), _ts("enrolled"), _ts("synced"))
+
+    console.print(table)
+    drafted = sum(1 for r in data.values() if "drafted" in r.get("stages", {}))
+    enrolled = sum(1 for r in data.values() if "enrolled" in r.get("stages", {}))
+    synced = sum(1 for r in data.values() if "synced" in r.get("stages", {}))
+    console.print(f"drafted={drafted}  enrolled={enrolled}  synced={synced}")
 
 
 if __name__ == "__main__":

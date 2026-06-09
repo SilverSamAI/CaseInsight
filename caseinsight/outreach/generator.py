@@ -7,6 +7,7 @@ from ..models import Prospect, EmailDraft
 from ..config import AppConfig
 from .prompt_builder import build_system_prompt, build_user_prompt
 from .validator import validate_draft
+from ..personas import infer_persona
 
 
 def generate_email(
@@ -18,7 +19,8 @@ def generate_email(
     import anthropic
 
     client = anthropic.Anthropic(api_key=config.anthropic_api_key)
-    system_prompt = build_system_prompt(facts)
+    persona = infer_persona(prospect.title)
+    system_prompt = build_system_prompt(facts, persona=persona)
     user_prompt = build_user_prompt(prospect, context_notes)
 
     response = client.messages.create(

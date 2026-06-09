@@ -1,6 +1,7 @@
 from __future__ import annotations
 from ..models import Prospect
 from ..facts.guardrail import build_approved_facts_block, build_offerings_block
+from ..personas import infer_persona, get_best_proof_points
 
 SYSTEM_PROMPT_TEMPLATE = """\
 You are a sales copywriter for Silverside AI.
@@ -10,6 +11,9 @@ You are a sales copywriter for Silverside AI.
 
 ## Approved Facts (use ONLY these - never invent claims)
 {approved_facts_block}
+
+## Most Relevant Proof Points for This Persona
+{persona_proof_block}
 
 ## What Silverside AI Offers
 {offerings_block}
@@ -22,7 +26,7 @@ Never position Silverside as: {do_not_position_as}
 - Do not use em dashes.
 - Do not use markdown in the body.
 - Do not invent facts, numbers, clients, or claims not listed in Approved Facts above.
-- Do not fabricate prospect's private priorities or motivations.
+- Do not fabricate the prospect's private priorities or motivations.
 
 ## Output Format
 Return a JSON object with exactly two keys: "subject" and "body".
@@ -30,11 +34,14 @@ The body must be plain text, 3-5 short paragraphs, under 200 words.
 """
 
 
-def build_system_prompt(facts: dict) -> str:
+def build_system_prompt(facts: dict, persona: str = "all") -> str:
     company = facts.get("company", {})
+    proof_points = get_best_proof_points(facts, persona)
+    persona_proof_block = "\n".join(f"- {p['text']}" for p in proof_points)
     return SYSTEM_PROMPT_TEMPLATE.format(
         positioning_line=company.get("positioning_line", {}).get("text", ""),
         approved_facts_block=build_approved_facts_block(facts),
+        persona_proof_block=persona_proof_block or "(use proof points from Approved Facts)",
         offerings_block=build_offerings_block(facts),
         position_as=", ".join(facts.get("position_as", [])),
         do_not_position_as=", ".join(facts.get("do_not_position_as", [])),
@@ -44,11 +51,13 @@ def build_system_prompt(facts: dict) -> str:
 def build_user_prompt(prospect: Prospect, context_notes: str = "") -> str:
     emp_str = f"~{prospect.employee_count:,}" if prospect.employee_count else "unknown size"
     tech_str = ", ".join(prospect.technologies[:5]) if prospect.technologies else "not available"
+    persona = infer_persona(prospect.title)
     parts = [
         f"Write a cold outreach email to {prospect.full_name},"
         f" {prospect.title or 'a leader'} at {prospect.company or 'their company'}"
         f" ({prospect.industry or 'unknown industry'}, {emp_str} employees).",
         f"Technologies they use: {tech_str}.",
+        f"Persona bucket: {persona}.",
     ]
     if context_notes:
         parts.append(context_notes)
