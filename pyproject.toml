@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "caseinsight"
+version = "0.1.0"
+description = "Silverside AI full sales automation platform"
+requires-python = ">=3.11"
+dependencies = [
+    "typer[all]>=0.12",
+    "anthropic>=0.28",
+    "pyyaml>=6.0",
+    "requests>=2.31",
+    "hubspot-api-client>=8.1",
+    "rich>=13.0",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+caseinsight = "caseinsight.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.14",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
